@@ -14,35 +14,41 @@ const STORAGE_KEYS = {
 } as const;
 
 function readStoredSort(): UrlSortMode | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return null;
+  }
   const v = window.localStorage.getItem(STORAGE_KEYS.sort);
   return v === 'key' || v === 'original' ? v : null;
 }
 
 function readStoredBool(key: string): boolean | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return null;
+  }
   const v = window.localStorage.getItem(key);
-  if (v === 'true') return true;
-  if (v === 'false') return false;
+  if (v === 'true') {
+    return true;
+  }
+  if (v === 'false') {
+    return false;
+  }
   return null;
 }
 
 export function UrlClarityTool() {
   const { lang, openTool, takeTransferredInput } = useAppShell();
-
   const [sortMode, setSortMode] = useState<UrlSortMode>(() => readStoredSort() ?? 'original');
   const [plusAsSpace, setPlusAsSpace] = useState<boolean>(() => readStoredBool(STORAGE_KEYS.plus) ?? true);
-
   const [input, setInput] = useState(() => takeTransferredInput('url') ?? '');
   const [selectedParamIndex, setSelectedParamIndex] = useState<number | null>(null);
-
   const [extraDecodeCount, setExtraDecodeCount] = useState(0);
   const [showJson, setShowJson] = useState(false);
   const [showNestedUrl, setShowNestedUrl] = useState(false);
 
   const inspected = useMemo<InspectResult>(() => inspectUrl(input, { plusAsSpace }), [input, plusAsSpace]);
-
   const locale = lang === 'ko' ? 'ko-KR' : 'en-US';
+  const showAssumedHttpsHint = inspected.ok && inspected.value.assumptions.length > 0;
+  const hasInput = input.trim().length > 0;
 
   const displayedParams = useMemo<QueryParam[]>(() => {
     if (!inspected.ok) return [];
@@ -79,16 +85,12 @@ export function UrlClarityTool() {
     return inspectUrl(inspectorValue.text, { plusAsSpace });
   }, [showNestedUrl, inspectorValue, plusAsSpace]);
 
-  const hasInput = input.trim().length > 0;
-
   // Persist per-tool prefs (lightweight)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(STORAGE_KEYS.sort, sortMode);
     window.localStorage.setItem(STORAGE_KEYS.plus, String(plusAsSpace));
   }, [sortMode, plusAsSpace]);
-
-  const showAssumedHttpsHint = inspected.ok && inspected.value.assumptions.length > 0;
 
   const onSelectParam = (index: number) => {
     setSelectedParamIndex(index);
